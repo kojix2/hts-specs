@@ -38,6 +38,10 @@
 
 \newcommand*{\memlimited}{\textcolor{gray}{\footnotesize\it limited}}
 
+% Use as, e.g., \cigarops{MID} to produce M/I/D with the operators in \tt
+\newcommand*{\cigarops}[1]{\cigaropsAux#1*}
+\def\cigaropsAux#1#2*{{\tt #1}\if\relax\detokenize{#2}\relax\else/\cigaropsAux#2*\fi}
+
 \begin{document}
 
 \input{SAMv1.ver}
@@ -67,8 +71,16 @@ This specification is for version 1.6 of the SAM and BAM formats.  Each SAM and
 BAM file may optionally specify the version being used via the
 {\tt @HD VN} tag. For full version history see Appendix~\ref{sec:history}. 
 
-Unless explicitly specified elsewhere, all fields are encoded using 7-bit US-ASCII \footnote{Charset ANSI\_X3.4-1968 as defined in RFC1345.} in using the POSIX / C locale.
-Regular expressions listed use the POSIX / IEEE Std 1003.1 extended syntax.
+SAM file contents are 7-bit US-ASCII, except for certain field values as individually specified which may contain other Unicode characters encoded in UTF-8.
+Alternatively and equivalently, SAM files are encoded in UTF-8 but non-ASCII characters are permitted only within certain field values as explicitly specified in the descriptions of those fields.%
+\footnote{Hence in particular SAM files must not begin with a byte order mark~(BOM) and lines of text are delimited by ASCII line terminator characters only.
+% Unicode identifies VT and FF as line break characters as well, but no one uses them in SAM.
+In addition to the local platform's text file line termination conventions, implementations may wish to support \textsc{lf} and \textsc{cr\,lf} for interoperability with other platforms.}
+
+Where it makes a difference, SAM file contents should be read and written using the POSIX\,/\,C locale.
+For example, floating-point values in SAM always use `{\tt .}' for the decimal-point character.
+
+The regular expressions in this specification are written using the POSIX\,/\,IEEE Std 1003.1 extended syntax.
 
 \subsection{An example}\label{sec:example}
 Suppose we have the following alignment with bases in lowercase
@@ -315,9 +327,11 @@ The {\tt TP} field is often omitted, which implies linear.}\\\cline{2-3}
   & {\tt KS} & The array of nucleotide bases that correspond to the key sequence of each read.\\\cline{2-3}
   & {\tt LB} & Library.\\\cline{2-3}
   & {\tt PG} & Programs used for processing the read group.\\\cline{2-3}
-  & {\tt PI} & Predicted median insert size.\\\cline{2-3}
+  & {\tt PI} & Predicted median insert size, rounded to the nearest integer.\\\cline{2-3}
   & {\tt PL} & Platform/technology used to produce the reads. \emph{Valid values}:
-  {\tt CAPILLARY}, {\tt DNBSEQ} (MGI/BGI), {\tt ELEMENT}, {\tt HELICOS}, {\tt ILLUMINA}, {\tt IONTORRENT}, {\tt LS454}, {\tt ONT} (Oxford Nanopore), {\tt PACBIO} (Pacific Biosciences), {\tt SOLID}, and {\tt ULTIMA}.
+  {\tt CAPILLARY}, {\tt DNBSEQ} (MGI/BGI), {\tt ELEMENT}, {\tt HELICOS}, {\tt ILLUMINA}, {\tt IONTORRENT}, {\tt LS454}, {\tt ONT} (Oxford Nanopore), {\tt PACBIO} (Pacific Biosciences), {\tt SINGULAR}, {\tt SOLID}, and {\tt ULTIMA}.%
+\footnote{The {\tt PL} value should be written in uppercase exactly as shown in this list of valid values.
+Tools should also accept lowercase when reading the {\tt @RG PL} field, due to the existence of public data files with lowercase {\tt PL} values.}
   This field should be omitted when the technology is not in this list (though the {\tt PM} field may still be present in this case) or is unknown.\\\cline{2-3}
   & {\tt PM} & Platform model. Free-form text providing further details of the platform/technology used.\\\cline{2-3}
   & {\tt PU} & Platform unit (e.g., flowcell-barcode.lane for Illumina or slide for SOLiD). Unique identifier.\\\cline{2-3}
@@ -415,7 +429,7 @@ The following table gives an overview of these mandatory fields in the SAM forma
   3 & {\sf RNAME} & String & {\tt \verb"\*"|\rnameRegexp} & Reference sequence NAME\footnotemark \\
   4 & {\sf POS} & Int & $[0,\,2^{31}-1]$ & 1-based leftmost mapping POSition \\
   5 & {\sf MAPQ} & Int & $[0,\,2^8-1]$ & MAPping Quality \\
-  6 & {\sf CIGAR} & String & {\tt \char92*|([0-9]+[MIDNSHPX=])+} & CIGAR string \\
+  6 & {\sf CIGAR} & String & {\tt \char92*|([0-9]+[MIDNSHP=X])+} & CIGAR string \\
   7 & {\sf RNEXT} & String & {\tt \verb"\*"|=|\rnameRegexp} & Reference name of the mate/next read \\
   8 & {\sf PNEXT} & Int & $[0,\,2^{31}-1]$ & Position of the mate/next read \\
   9 & {\sf TLEN} & Int & $[-2^{31}+1,\,2^{31}-1]$ & observed Template LENgth \\
@@ -546,7 +560,7 @@ Each bit is explained in the following table:
   \item For mRNA-to-genome alignment, an {\tt N} operation represents an
     intron. For other types of alignments, the interpretation of {\tt N}
     is not defined.
-  \item Sum of lengths of the {\tt M/I/S/=/X} operations shall equal
+  \item Sum of lengths of the \cigarops{MIS=X} operations shall equal
     the length of {\sf SEQ}.
   \end{itemize}
 \item {\sf RNEXT}: Reference sequence name of the primary alignment of the NEXT read in the
@@ -630,7 +644,7 @@ Each bit is explained in the following table:
 
 \item {\sf SEQ}: segment SEQuence. This field can be a `*' when the
   sequence is not stored. If not a `*', the length of the sequence must
-  equal the sum of lengths of {\tt M/I/S/=/X} operations in {\sf CIGAR}.
+  equal the sum of lengths of \cigarops{MIS=X} operations in {\sf CIGAR}.
   An `=' denotes the base is identical to the reference base. No
   assumptions can be made on the letter cases.
 \item {\sf QUAL}: ASCII of base QUALity plus 33 (same as the quality
@@ -717,7 +731,7 @@ specific software package for it to function properly.
     identical to its mate.
   \item If all segments in a template are unmapped, their {\sf RNAME}
     should be set as `*' and {\sf POS} as 0.
-  \item If {\sf POS} plus the sum of lengths of {\tt M/=/X/D/N}
+  \item If {\sf POS} plus the sum of lengths of \cigarops{M=XDN}
     operations in {\sf CIGAR} exceeds the length specified in the {\tt
       LN} field of the {\tt @SQ} header line (if exists) with an SN
     equal to {\sf RNAME}, the alignment should be unmapped, unless the
@@ -749,7 +763,7 @@ specific software package for it to function properly.
 Mappings that cross the coordinate `join' in circular reference sequences (i.e., those whose {\tt @SQ} headers specify {\tt TP:circular}) may be represented as follows:
   \begin{enumerate}[label=\arabic*]
   \item (Preferred)
-As usual {\sf POS} should be between 1 and the {\tt @SQ} header's {\tt LN} value, but {\sf POS} plus the sum of the lengths of {\tt M/=/X/D/N} {\sf CIGAR} operations may exceed {\tt LN}.
+As usual {\sf POS} should be between 1 and the {\tt @SQ} header's {\tt LN} value, but {\sf POS} plus the sum of the lengths of \cigarops{M=XDN} {\sf CIGAR} operations may exceed {\tt LN}.
 Coordinates greater than~{\tt LN} are interpreted by subtracting {\tt LN} so that bases at $\texttt{LN}+1, \texttt{LN}+2, \texttt{LN}+3, \ldots$ are considered to be mapped at positions $1,2,3,\ldots$; thus each (1-based) position $p$ is interpreted as $((p-1)\bmod\texttt{LN})+1$.%
 \footnote{The impact of this representation on indexing and random access is yet to be explored by implementations.}
 
@@ -1055,7 +1069,7 @@ underlined word in uppercase denotes a field in the SAM format.
   & \multicolumn{2}{l|}{\sf next\_pos} & 0-based leftmost pos of the next segment ($=\underline{\sf PNEXT}-1$) & {\tt int32\_t} & [-1] \\\cline{2-6}
   & \multicolumn{2}{l|}{\sf tlen} & Template length ($=\underline{\sf TLEN}$) & {\tt int32\_t} & [0] \\\cline{2-6}
   & \multicolumn{2}{l|}{\sf read\_name} & Read name, {\tt NUL}-terminated (\underline{\sf QNAME} with trailing `{\tt\verb"\0"}')\footnotemark & {\tt char[{\sf l\_read\_name}]} & \\\cline{2-6}
-  & \multicolumn{2}{l|}{\sf cigar} & CIGAR: {\tt {\sf op\_len}\char60\char60 4\char124{\sf op}}. `{\tt MIDNSHP\char61X}'$\to$`012345678' & {\tt uint32\_t[{\sf n\_cigar\_op}]} & \\\cline{2-6}
+  & \multicolumn{2}{l|}{\sf cigar} & CIGAR: {\tt {\sf op\_len}\char60\char60 4\char124{\sf op}}. `{\tt MIDNSHP=X}'$\to$`012345678' & {\tt uint32\_t[{\sf n\_cigar\_op}]} & \\\cline{2-6}
   & \multicolumn{2}{l|}{\sf seq} & 4-bit encoded read: `{\tt =ACMGRSVTWYHKDBN}'$\to[0,15]$. See Section~\ref{sec:seq} & {\tt uint8\_t[({\sf l\_seq}+1)/2]} & \\\cline{2-6}
   & \multicolumn{2}{l|}{\sf qual} & Phred-scaled base qualities. See Section~\ref{sec:seq} & {\tt char[{\sf l\_seq}]} & \\\cline{2-6}
   & \multicolumn{5}{c|}{\textcolor{gray}{\it List of auxiliary data (until the end of the alignment block)}} \\\cline{3-6}
@@ -1442,6 +1456,8 @@ at \url{https://github.com/samtools/hts-specs}.}
 \subsection*{1.6: 28 November 2017 to current}
 
 \begin{itemize}
+\item Add {\tt SINGULAR} to the list of {\tt @RG PL} header tag values. (May 2023)
+\item Clarify that {\tt @RG PI} values are integers. (May 2023)
 \item Add {\tt ELEMENT} and {\tt ULTIMA} to the list of {\tt @RG PL} header tag values. (Aug 2022)
 \item Clarify that header field tags must be distinct within each line, and that the ordering of both header fields and alignment optional fields is not significant. (Jun 2021)
 \item Clarify the meaning of TLEN when secondary alignments are present. (May 2021)
@@ -1503,6 +1519,7 @@ We recommend that implementations validating reference sequence names do so usin
 \begin{itemize}
 \item Add {\tt RG PG} header field. (Nov 2010)
 \item Add BAM description and index sections. (Nov 2010)
+\item \textbf{Add `{\tt =}' and `{\tt X}' CIGAR operations.} (July 2010)
 \item \textbf{Removal of FLAG letters.} (July 2010)
 \item The {\tt SM} header field, previously mandatory for {\tt @RG}, is now
 optional. (July 2010)

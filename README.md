@@ -18,6 +18,7 @@ Alignment data files
 These formats are discussed on the [samtools-devel mailing list][samdev-ml].
 
 **[CRAMv3.tex]** is the canonical specification for the CRAM format, while **[CRAMv2.1.tex]** describes its now-obsolete predecessor.
+**[CRAMcodecs.tex]** contains details of the CRAM custom compression codecs.
 Further details can be found at [ENA's CRAM toolkit page][ena-cram] and [GA4GH's CRAM page][ga4gh-cram].
 CRAM discussions can also be found on the [samtools-devel mailing list][samdev-ml].
 
@@ -37,8 +38,7 @@ It has no formal definition and several incompatible variants, but is described 
 Variant calling data files
 --------------------------
 
-**[VCFv4.3.tex]** is the canonical specification for the Variant Call Format and its textual (VCF) and binary (BCF) encodings, while **[VCFv4.1.tex]** and **[VCFv4.2.tex]** describe their predecessors.
-**[VCFv4.4.draft.tex]** is a working draft of the upcoming version of VCF format and is under active revision.
+**[VCFv4.5.tex]** is the canonical specification for the Variant Call Format and its textual (VCF) and binary (BCF) encodings, while **[VCFv4.1.tex]**, **[VCFv4.2.tex]**, **[VCFv4.3.tex]** and **[VCFv4.4.tex]** describe their predecessors.
 These formats are discussed on the [vcftools-spec mailing list][vcfspec-ml].
 
 **[BCFv1_qref.tex]** summarizes the obsolete BCF1 format historically produced by [samtools].  This format is no longer recommended for use, as it has been superseded by the more widely-implemented BCF2.
@@ -69,12 +69,14 @@ Transfer protocols
 [SAMtags.tex]:  http://samtools.github.io/hts-specs/SAMtags.pdf
 [CRAMv2.1.tex]: http://samtools.github.io/hts-specs/CRAMv2.1.pdf
 [CRAMv3.tex]:   http://samtools.github.io/hts-specs/CRAMv3.pdf
+[CRAMcodecs.tex]: http://samtools.github.io/hts-specs/CRAMcodecs.pdf
 [CSIv1.tex]:    http://samtools.github.io/hts-specs/CSIv1.pdf
 [tabix.tex]:    http://samtools.github.io/hts-specs/tabix.pdf
 [VCFv4.1.tex]:  http://samtools.github.io/hts-specs/VCFv4.1.pdf
 [VCFv4.2.tex]:  http://samtools.github.io/hts-specs/VCFv4.2.pdf
 [VCFv4.3.tex]:  http://samtools.github.io/hts-specs/VCFv4.3.pdf
-[VCFv4.4.draft.tex]:  http://samtools.github.io/hts-specs/VCFv4.4.draft.pdf
+[VCFv4.4.tex]:  http://samtools.github.io/hts-specs/VCFv4.4.pdf
+[VCFv4.5.tex]: https://samtools.github.io/hts-specs/VCFv4.5.pdf
 [BCFv1_qref.tex]: http://samtools.github.io/hts-specs/BCFv1_qref.pdf
 [BCFv2_qref.tex]: http://samtools.github.io/hts-specs/BCFv2_qref.pdf
 [BEDv1.tex]:    https://samtools.github.io/hts-specs/BEDv1.pdf
